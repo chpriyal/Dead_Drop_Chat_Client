@@ -1,44 +1,49 @@
-
-#include"util.hpp"
-
-/*coverting char array to binary*/
-char *string_to_binary(char *s){
-    if (s == NULL) return 0; 
-    size_t len = strlen(s) - 1;//Last element is the terminating char
-    char *binary = malloc(len * 8 + 1);
-    binary[0] = '\0';
-
-    for (size_t i = 0; i < len; ++i) {
-        char ch = s[i];
-        for (int j = 7; j >= 0; --j) {
-            if (ch & (1 << j)) {
-                strcat(binary, "1");
-            } else {
-                strcat(binary, "0");
-            }
-        }
-    }
-    return binary;
-}
+#include "util.hpp"
 
 
-int main(int argc, char **argv)
-{
-	// Put your covert channel setup code here
+
+int main() {
+	// Initialize config and local variables
+	struct config config;
+	init_config(&config);
+	int sending = 1;
+
+	bool sequence[8] = {1,0,1,0,1,0,1,1};
 
 	printf("Please type a message.\n");
-
-	bool sending = true;
 	while (sending) {
+
+		// Get a message to send from the user
+		printf("< ");
 		char text_buf[128];
 		fgets(text_buf, sizeof(text_buf), stdin);
-	
-		// Put your covert channel code here
+
+		// Indicate termination if input message is "exit"
+		if (strcmp(text_buf, "exit\n") == 0) {
+			sending = 0;
+		}
+
+		// Convert that message to binary
+		char *msg = string_to_binary(text_buf);
+
+		// Send a '10101011' bit sequence tell the receiver
+		// a message is going to be sent
+		for (int i = 0; i < 8; i++) {
+			send_bit(sequence[i], &config);
+		}
+
+		// Send the message bit by bit
+		size_t msg_len = strlen(msg);
+		for (int ind = 0; ind < msg_len; ind++) {
+			if (msg[ind] == '0') {
+				send_bit(false, &config);
+			} else {
+				send_bit(true, &config);
+			}
+		}
+
 	}
 
-	printf("Sender finished.\n");
-
+	printf("Sender finished\n");
 	return 0;
 }
-
-

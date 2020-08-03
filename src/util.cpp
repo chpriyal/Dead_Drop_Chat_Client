@@ -1,4 +1,3 @@
-
 #include "util.hpp"
 
 /* Measure the time it takes to access a block with virtual address addr. */
@@ -21,8 +20,28 @@ CYCLES measure_one_block_access_time(ADDR_PTR addr)
 	return cycles;
 }
 
-extern inline __attribute__((always_inline))
-CYCLES rdtscp(void) {
+
+
+
+
+extern void send_bit(bool bit, struct config *config)
+{
+
+	CYCLES start_t = cc_sync();
+	if (bit) {
+		ADDR_PTR addr = config->addr;
+		while ((get_time() - start_t) < config->interval) {
+			clflush(addr);
+		}	
+
+	} else {
+		while (get_time() - start_t < config->interval) {}
+	}
+}
+
+
+
+extern CYCLES rdtscp(void) {
 	CYCLES cycles;
 	asm volatile ("rdtscp"
 	: "=a" (cycles));
@@ -31,27 +50,18 @@ CYCLES rdtscp(void) {
 }
 
 
-inline CYCLES get_time() {
+CYCLES get_time() {
     return rdtscp();
 }
 
-/* Synchronizes at the overflow of a counter
- *
- * Counter is created by masking the lower bits of the Time Stamp Counter
- * Sync done by spinning until the counter is less than CHANNEL_SYNC_JITTER
- */
-extern inline __attribute__((always_inline))
-CYCLES cc_sync() {
+
+extern CYCLES cc_sync() {
     while((get_time() & CHANNEL_SYNC_TIMEMASK) > CHANNEL_SYNC_JITTER) {}
     return get_time();
 }
 
 
-/*
- * Flushes the cache block accessed by a virtual address out of the cache
- */
-extern inline __attribute__((always_inline))
-void clflush(ADDR_PTR addr)
+extern void clflush(ADDR_PTR addr)
 {
     asm volatile ("clflush (%0)"::"r"(addr));
 }
@@ -59,10 +69,9 @@ void clflush(ADDR_PTR addr)
 
 void init_config(struct config *config)
 {
-	// Initialize default config parameters
 	int offset = 0x0;
 	config->interval = 0x00008000;
-	char *filename = "/bin/ls";
+	const char *filename = "/home/priyal/projects/Dead_Drop/src/shared";
 
 	
 	if (filename != NULL) {
@@ -85,4 +94,41 @@ void init_config(struct config *config)
 
 
 
+char *conv_char(char *data, int size, char *msg)
+{
+    for (int i = 0; i < size; i++) {
+        char tmp[8];
+        int k = 0;
 
+        for (int j = i * 8; j < ((i + 1) * 8); j++) {
+            tmp[k++] = data[j];
+        }
+
+        char tm = strtol(tmp, 0, 2);
+        msg[i] = tm;
+    }
+
+    msg[size] = '\0';
+    return msg;
+}
+
+
+/*coverting char array to binary*/
+char *string_to_binary(char *s){
+    if (s == NULL) return 0; 
+    size_t len = strlen(s) - 1;//Last element is the terminating char
+    char *binary = (char *)malloc(len * 8 + 1);
+    binary[0] = '\0';
+
+    for (size_t i = 0; i < len; ++i) {
+        char ch = s[i];
+        for (int j = 7; j >= 0; --j) {
+            if (ch & (1 << j)) {
+                strcat(binary, "1");
+            } else {
+                strcat(binary, "0");
+            }
+        }
+    }
+    return binary;
+}

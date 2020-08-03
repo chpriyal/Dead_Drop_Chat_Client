@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -27,10 +26,10 @@
 #define CHANNEL_SYNC_TIMEMASK           0x000FFFFF
 #define CHANNEL_SYNC_JITTER             0x0100
 
-
 #define DEFAULT_FILE_SIZE	4096
 #define CACHE_BLOCK_SIZE	64
 #define MAX_BUFFER_LEN	1024
+
 
 
 struct config {
@@ -42,10 +41,15 @@ CYCLES measure_one_block_access_time(ADDR_PTR addr);
 CYCLES rdtscp(void);
 CYCLES get_time();
 CYCLES cc_sync();
+char *string_to_binary(char *s);
+
+char *conv_char(char *data, int size, char *msg);
  
 void clflush(ADDR_PTR addr);
 
-void init_config(struct config *config, int argc, char **argv);
+void init_config(struct config *config);
+void send_bit(bool bit, struct config *config);
+
 
 #endif
 
